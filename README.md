@@ -10,4 +10,4 @@
 
 ##### &emsp;&emsp;java 1.8.0
 ##### &emsp;&emsp;zookeeper 3.5.6
-##### &emsp;&emsp;kafka 2.12-2.4.0 
+##### &emsp;&emsp;kafka latest 
