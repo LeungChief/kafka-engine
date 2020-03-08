@@ -2,7 +2,7 @@ from kafka.errors import KafkaError
 from functools import wraps
 import logging, json
 from kafka import KafkaClient, KafkaAdminClient, KafkaProducer, KafkaConsumer
-from ipproxy_pool.config.kafka_config import base_config, \
+from kafka_config import base_config, \
     admin_client_config, \
     client_config, create_topic_config, \
     producter_config, consumer_config
@@ -41,6 +41,7 @@ class KafkaPython(object):
         return 'code:%s client_id %s reason:%s' % (code, client_id, msg)
 
 
+@singleton
 class Product(KafkaPython):
     def __init__(self, **kwargs):
         super().__init__()
@@ -75,10 +76,8 @@ class Consumer(KafkaPython):
     def get_user_topics(self):
         return self.engine.topics()
 
-    def topic_consumer(self):
-        pass
 
-
+@singleton
 class AdminClient(KafkaPython):
     def __init__(self, **kwargs):
         super().__init__()
