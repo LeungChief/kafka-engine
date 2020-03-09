@@ -1,7 +1,15 @@
 base_config = {
-    'bootstrap_servers': [],
     'client_id': 'leung',
     'request_timeout_ms': 3000,
+}
+
+store_config = {
+    'db': 'mongodb',
+
+    'mongo_connect': {
+        'database': 'kafka',
+        'collection': '_offset',
+    }
 }
 
 create_topic_config = {
@@ -19,7 +27,7 @@ producter_config = {
 }
 
 consumer_config = {
-
+    'enable_auto_commit': False
 }
 
 admin_client_config = {

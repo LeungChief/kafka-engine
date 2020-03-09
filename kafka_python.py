@@ -1,11 +1,15 @@
+import kafka
+import logging
 from kafka.errors import KafkaError
 from functools import wraps
-import logging, json
 from kafka import KafkaClient, KafkaAdminClient, KafkaProducer, KafkaConsumer
-from kafka_config import base_config, \
+from ipproxy_pool.config.kafka_config import base_config, \
     admin_client_config, \
     client_config, create_topic_config, \
     producter_config, consumer_config
+
+from ipproxy_pool.db.MongodbManager import mongodbManager
+from ipproxy_pool.config.kafka_config import store_config
 
 create_topic_fail_code = 411
 delete_topic_fail_code = -411
@@ -25,16 +29,18 @@ def singleton(cls):
     return get_instance
 
 
+_logger = logging.getLogger('kafka-python')
+
+
 class KafkaPython(object):
 
-    def __init__(self, servers=None, client_id='', request_timeout_ms=3000):
+    def __init__(self, servers=None, client_id=None, request_timeout_ms=3000):
         if servers is None:
             servers = base_config.get('bootstrap_servers', ['localhost:9092'])
 
         self._bootstrap_servers = servers
         self._client_id = base_config.get('client_id', client_id)
         self._request_timeout_ms = base_config.get('request_timeout_ms', request_timeout_ms)
-        self._logger = logging.getLogger('kafka-python')
 
     @staticmethod
     def _log_msg(code, client_id, msg):
@@ -57,7 +63,7 @@ class Product(KafkaPython):
             self.engine.send(topic=topic, key=key, value=value, **kwargs).add_callback(successCall).add_errback(
                 errorCall)
         except KafkaError as e:
-            self._logger.error(self._log_msg(product_topic_fail_code, self._client_id, msg='%s' % e))
+            _logger.error(self._log_msg(product_topic_fail_code, self._client_id, msg='%s' % e))
             return
         self.engine.close(5)
 
@@ -66,15 +72,76 @@ class Product(KafkaPython):
 class Consumer(KafkaPython):
 
     def __init__(self, bootstrap_servers=None, **kwargs):
+
         super().__init__(servers=bootstrap_servers)
         consumer_config.update(kwargs)
+
         self.engine = KafkaConsumer(bootstrap_servers=self._bootstrap_servers,
                                     client_id=self._client_id,
-                                    request_timeout_ms=self._request_timeout_ms,
                                     **consumer_config)
 
+        self.group_id = consumer_config.get('group_id', None)
+        self.tps = []
+        self._partition_mode = None
+
     def get_user_topics(self):
-        return self.engine.topics()
+        t = self.engine.topics()
+        self.engine.close()
+        return t
+
+    def assign_partition(self, topics: list):
+
+        if topics:
+
+            for v in topics:
+                tp = kafka.TopicPartition(topic=str(v['topic']), partition=int(v['partition']))
+                self.tps.append(tp)
+            self.engine.assign(self.tps)
+
+        self._partition_mode = '1'
+        return self
+
+    def sub_partition(self, topic: list):
+        self.tps = topic
+        self._partition_mode = '2'
+        return self
+
+    def topic_consumer(self, **kwargs):
+        if self._partition_mode == '1':
+
+            for tp in self.tps:
+                data = self.find_or_update(topic=tp.topic,
+                                           partition=tp.partition,
+                                           group_id=self.group_id,
+                                           offset=self.engine.end_offsets([tp])[tp],
+                                           )
+                if data:
+                    self.engine.seek(tp, data['offset'])
+                else:
+
+                    self.engine.seek(tp, self.engine.beginning_offsets([tp])[tp])
+
+        elif self._partition_mode == '2':
+            self.engine.subscribe(self.topics, pattern=kwargs['pattern'], listener=kwargs['listener'])
+        else:
+            raise Exception('you have to assign the partition mode')
+
+        return self.engine
+
+    @staticmethod
+    def find_or_update(topic, partition, group_id, offset):
+        client = Mongo()
+        data = client.get_offset(topic=topic, partition=partition, group_id=group_id)
+        if data is None:
+            client.commit_offset(topic=topic,
+                                 partition=partition,
+                                 group_id=group_id,
+                                 offset=offset,
+                                 )
+            return False
+        else:
+            client.update_offset(topic=topic, partition=partition, group_id=group_id, offset=offset)
+            return data
 
 
 @singleton
@@ -102,13 +169,13 @@ class AdminClient(KafkaPython):
             try:
                 self.engine.create_topics(new_topic, **create_topic_config)
             except KafkaError as e:
-                self._logger.error(e)
+                _logger.error(e)
             except Exception as e:
-                self._logger.error(e)
+                _logger.error(e)
 
             self.engine.close()
         else:
-            self._logger.error(self._log_msg(create_topic_fail_code, self._client_id, 'topic重复'))
+            _logger.error(self._log_msg(create_topic_fail_code, self._client_id, 'topic重复'))
             return
 
     def delete_topics(self, topic: list):
@@ -118,11 +185,11 @@ class AdminClient(KafkaPython):
                 self.engine.delete_topics(topic, self._request_timeout_ms)
 
             except KafkaError as e:
-                self._logger.error(e)
+                _logger.error(e)
 
             self.engine.close()
         else:
-            self._logger.error(self._log_msg(delete_topic_fail_code, self._client_id, '需删除的topic不存在'))
+            _logger.error(self._log_msg(delete_topic_fail_code, self._client_id, '需删除的topic不存在'))
             return
 
 
@@ -144,3 +211,39 @@ class NewTopics(object):
         self.replication_factor = replication_factor
         self.replica_assignments = replica_assignments
         self.topic_configs = topic_configs
+
+
+commit_fail_code = -7001
+update_fail_code = -7002
+
+
+class Mongo(object):
+
+    def __init__(self):
+        self.database = store_config['mongo_connect']['database']
+        self.collection = store_config['mongo_connect']['collection']
+        self.client = mongodbManager(database=self.database, collection=self.collection).mongo_collection()
+
+    def get_offset(self, topic, partition, group_id):
+        return self.client.find_one({'topic': topic, 'partition': partition, 'group_id': group_id})
+
+    def update_offset(self, topic, partition, group_id, offset):
+        try:
+            self.client.update({'topic': topic, 'partition': partition, 'group_id': group_id},
+                               {"$set": {'offset': offset}}
+                               )
+        except Exception as e:
+            _logger.error(
+                'code:{0} , topic:{1} , partition:{2} , group_id:{3} commit offset fail:{4}'.format(update_fail_code,
+                                                                                                    topic, partition,
+                                                                                                    group_id, e))
+
+    def commit_offset(self, topic, partition, group_id, offset):
+        try:
+            return self.client.insert_one(
+                {'topic': topic, 'partition': partition, 'group_id': group_id, 'offset': offset, })
+        except Exception as e:
+            _logger.error(
+                'code:{0} , topic:{1} , partition:{2} , group_id:{3} commit offset fail:{4}'.format(commit_fail_code,
+                                                                                                    topic, partition,
+                                                                                                    group_id, e))
