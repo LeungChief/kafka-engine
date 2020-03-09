@@ -185,7 +185,7 @@ class AdminClient(KafkaPython):
                 self.engine.delete_topics(topic, self._request_timeout_ms)
 
             except KafkaError as e:
-                _logger.error(e)
+                _logger.error(self._log_msg(delete_topic_fail_code, self._client_id, '删除的topic失败:%s' % e))
 
             self.engine.close()
         else:
