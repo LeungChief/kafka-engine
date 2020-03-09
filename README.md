@@ -12,14 +12,15 @@
 ##### &emsp;&emsp;kafka 2.0.2 
 <br>
 &emsp;你需要通过 pip 安装以下依赖 <br>
-&emsp;&emsp;* kafka-python
-
+&emsp;&emsp; *kafka-python<br>
+&emsp;&emsp; *pymongo
 <br>
 <br>
 
 > ### 使用
+#### v0.01 实现了用database管理kafka消费端的offset
 
-`以下代码是假定你已熟悉kafka-python的参数配置`
+####`以下代码是假定你已熟悉kafka-python的参数配置,并且已配置mongodb`
 
 ##### 创建topic:
 <pre>
