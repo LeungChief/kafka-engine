@@ -3,6 +3,7 @@
 
 #### &emsp;&emsp;对kafka-python进行了封装的类文件.用于项目的分布式数据收集、统一配置数据、持久化功能<br>
 #### &emsp;&emsp;目前仅完成一些基础类,计划日后会逐步完善<br>
+
 <br>
 
 > ### 环境需求
@@ -11,14 +12,13 @@
 ##### &emsp;&emsp;zookeeper 3.5.6
 ##### &emsp;&emsp;kafka 2.0.2 
 <br>
-&emsp;你需要通过 pip 安装以下依赖 <br>
-&emsp;&emsp; *kafka-python<br>
-&emsp;&emsp; *pymongo
+你需要通过 pip 安装以下依赖 <br>
+* kafka-python<br>
+* pymongo
 <br>
 <br>
 
 > ### 使用
-#### v0.01 实现了用database管理kafka消费端的offset
 
 #### `以下代码是假定你已熟悉kafka-python的参数配置,并且已配置mongodb`
 
@@ -56,7 +56,10 @@ message = Consumer(group_id='test')
 for msg in message:
     print(msg)
 </pre>
+> ### 历史版本
 
-> ## 参考资料
+##### &emsp;&emsp;v0.01 实现了用database管理kafka消费端的offset
+
+> ### 参考资料
 
 https://s0kafka-python0readthedocs0io.icopy.site/en/master/usage.html
