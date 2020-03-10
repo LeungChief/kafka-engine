@@ -27,6 +27,8 @@ producter_config = {
 }
 
 consumer_config = {
+
+    'consumer_timeout_ms': 500,  # 如果在指定时间间隔后没有消息可供使用，则向使用方抛出超时异常
     'enable_auto_commit': False
 }
 
