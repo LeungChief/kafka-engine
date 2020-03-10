@@ -11,6 +11,7 @@
 ##### &emsp;&emsp;java 1.8.0
 ##### &emsp;&emsp;zookeeper 3.5.6
 ##### &emsp;&emsp;kafka 2.0.2 
+##### &emsp;&emsp;mongodb 4.2.3 
 <br>
 你需要通过 pip 安装以下依赖 <br>
 * kafka-python<br>
@@ -18,9 +19,12 @@
 <br>
 <br>
 
-> ### 使用
+> ### 版本信息
 
-#### `以下代码是假定你已熟悉kafka-python的参数配置,并且已配置mongodb`
+##### &emsp;&emsp;v0.01 实现了用database管理kafka消费端的offset,并且可回滚消费端超时前的offset
+
+> ### 使用
+#### `以下代码是假定你已熟悉kafka-python的参数配置,并且已配置好环境`
 
 ##### 创建topic:
 <pre>
@@ -53,12 +57,8 @@ message = Consumer(group_id='test')
               .assign_partition(
             [{'topic': 'new_topic', 'partition': 1}, {'topic': 'topicnewtest1', 'partition': 0}]).topic_consumer()
 
-for msg in message:
-    print(msg)
+print(message)
 </pre>
-> ### 历史版本
-
-##### &emsp;&emsp;v0.01 实现了用database管理kafka消费端的offset
 
 > ### 参考资料
 
