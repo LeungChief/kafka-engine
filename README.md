@@ -5,6 +5,7 @@
 #### &emsp;&emsp;目前仅完成一些基础类,计划日后会逐步完善<br>
 
 <br>
+<br>
 
 > ### 环境需求
 
@@ -13,7 +14,8 @@
 ##### &emsp;&emsp;kafka 2.0.2 
 ##### &emsp;&emsp;mongodb 4.2.3 
 <br>
-你需要通过 pip 安装以下依赖 <br>
+
+##### 你需要通过 pip 安装以下依赖 <br>
 * kafka-python<br>
 * pymongo
 <br>
@@ -22,6 +24,8 @@
 > ### 版本信息
 
 ##### &emsp;&emsp;v0.01 实现了用database管理kafka消费端的offset,并且可回滚消费端超时前的offset
+<br>
+<br>
 
 > ### 使用
 #### `以下代码是假定你已熟悉kafka-python的参数配置,并且已配置好环境`
@@ -59,6 +63,9 @@ message = Consumer(group_id='test')
 
 print(message)
 </pre>
+
+<br>
+<br>
 
 > ### 参考资料
 
