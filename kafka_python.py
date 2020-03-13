@@ -3,11 +3,11 @@ import logging
 from kafka.errors import KafkaError
 from functools import wraps
 from kafka import KafkaClient, KafkaAdminClient, KafkaProducer, KafkaConsumer
-from ipproxy_pool.config.kafka_config import base_config, \
+from kafka_config import base_config, \
     admin_client_config, \
     client_config, create_topic_config, \
     producter_config, consumer_config, store_config
-from ipproxy_pool.db.model.KafkaQueueModel import Mongo
+from kafkaQueueModel import Mongo
 
 create_topic_fail_code = 411
 delete_topic_fail_code = -411
