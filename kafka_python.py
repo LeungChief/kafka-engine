@@ -167,7 +167,7 @@ class Consumer(KafkaPython):
 
         # 分别提交offset信息至kafka and database
         if self.offset_store_mode == 'both':
-            
+
             self.engine.commit(offsets={tp: (kafka.OffsetAndMetadata(offset, None))})
             self.DbClient.commit_offset(topic=topic, group_id=group_id, partition=partition, offset=offset)
         # 提交至kafka服务器
