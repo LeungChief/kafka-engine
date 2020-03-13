@@ -165,20 +165,9 @@ class Consumer(KafkaPython):
 
         tp = kafka.TopicPartition(topic=str(topic), partition=int(partition))
 
-        # def commit_2db(offset_object, response):
-        #     # print(offset_object)
-        #     # print(exception)
-        #     # exit(0)
-        #     try:
-        #         self.DbClient.commit_offset(topic=topic, group_id=group_id, partition=partition, offset=offset,
-        #                                     )
-        #     except Exception as e:
-        #         raise Exception('async2db fail :offset %s,reason: %s' % (offset_object, e))
-
         # 分别提交offset信息至kafka and database
         if self.offset_store_mode == 'both':
-            # ！！！commit_async导致offset排序错乱！！！
-            # self.engine.commit_async(offsets={tp: (kafka.OffsetAndMetadata(offset, None))}, callback=commit_2db)
+            
             self.engine.commit(offsets={tp: (kafka.OffsetAndMetadata(offset, None))})
             self.DbClient.commit_offset(topic=topic, group_id=group_id, partition=partition, offset=offset)
         # 提交至kafka服务器
