@@ -24,7 +24,7 @@
 
 > ### 版本信息
 
-#### v0.01 实现了用database管理kafka消费端的位移值,并且可回滚消offset
+#### v0.01 实现了用database管理kafka消费端的offset,并且可回滚消offset
 <br>
 <br>
 
